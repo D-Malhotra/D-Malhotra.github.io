@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Boxing Tracker">
+    <title>Boxing Reflex Ball Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 30px 20px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .punch-counter {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .punch-number {
+            font-size: 5em;
+            font-weight: bold;
+            line-height: 1;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s ease;
+        }
+
+        .punch-number.punch-animation {
+            animation: punchHit 0.3s ease;
+        }
+
+        @keyframes punchHit {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.3) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        .punch-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            -webkit-appearance: none;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #333;
+        }
+
+        .start-btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .stop-btn {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: #333;
+        }
+
+        .stop-btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .audio-level {
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .level-label {
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+
+        .level-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .level-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%);
+            width: 0%;
+            transition: width 0.1s ease;
+            border-radius: 4px;
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 1.4em;
+            margin: 20px 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .history {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+        }
+
+        .history h2 {
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+        }
+
+        .sensitivity-control {
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .sensitivity-label {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sensitivity-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+
+        .sensitivity-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            cursor: pointer;
+        }
+
+        .sensitivity-slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            cursor: pointer;
+            border: none;
+        }
+
+        .clear-history-btn {
+            width: 100%;
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .clear-history-btn:active {
+            transform: scale(0.98);
+        }
+
+        .error-message {
+            background: rgba(250, 112, 154, 0.2);
+            border: 1px solid rgba(250, 112, 154, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .punch-number {
+                font-size: 4em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🥊 Boxing Tracker</h1>
+        
+        <div class="error-message" id="errorMessage">
+            Microphone access required. Please allow permission and refresh.
+        </div>
+        
+        <div class="punch-counter">
+            <div class="punch-number" id="punchCount">0</div>
+            <div class="punch-label">PUNCHES</div>
+        </div>
+
+        <div class="timer" id="timer">00:00</div>
+
+        <div class="controls">
+            <button class="start-btn" id="startBtn">Start</button>
+            <button class="stop-btn" id="stopBtn" disabled>Stop</button>
+        </div>
+
+        <div class="audio-level">
+            <div class="level-label">Audio Level</div>
+            <div class="level-bar">
+                <div class="level-fill" id="levelFill"></div>
+            </div>
+        </div>
+
+        <div class="sensitivity-control">
+            <div class="sensitivity-label">
+                <span>Sensitivity</span>
+                <span id="sensitivityValue">50</span>
+            </div>
+            <input type="range" class="sensitivity-slider" id="sensitivitySlider" min="10" max="90" value="50">
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="avgSpeed">0</div>
+                <div class="stat-label">Punches/Min</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="bestScore">0</div>
+                <div class="stat-label">Best Score</div>
+            </div>
+        </div>
+
+        <div class="history">
+            <h2>Session History</h2>
+            <div class="chart-container">
+                <canvas id="historyChart"></canvas>
+            </div>
+            <button class="clear-history-btn" id="clearHistoryBtn">Clear History</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let audioContext = null;
+        let analyser = null;
+        let microphone = null;
+        let javascriptNode = null;
+        let isTracking = false;
+        let punchCount = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let lastPunchTime = 0;
+        let sessionHistory = [];
+        let historyChart = null;
+        let sensitivity = 50;
+        let stream = null;
+
+        // DOM elements
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const punchCountEl = document.getElementById('punchCount');
+        const timerEl = document.getElementById('timer');
+        const levelFill = document.getElementById('levelFill');
+        const avgSpeedEl = document.getElementById('avgSpeed');
+        const bestScoreEl = document.getElementById('bestScore');
+        const sensitivitySlider = document.getElementById('sensitivitySlider');
+        const sensitivityValue = document.getElementById('sensitivityValue');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Punches',
+                        data: [],
+                        borderColor: 'rgba(132, 250, 176, 1)',
+                        backgroundColor: 'rgba(132, 250, 176, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointBackgroundColor: 'rgba(132, 250, 176, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.8)',
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.8)',
+                                stepSize: 10
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startTracking);
+        stopBtn.addEventListener('click', stopTracking);
+        
+        sensitivitySlider.addEventListener('input', function(e) {
+            sensitivity = parseInt(e.target.value);
+            sensitivityValue.textContent = sensitivity;
+        });
+        
+        clearHistoryBtn.addEventListener('click', clearHistory);
+
+        async function startTracking() {
+            console.log('Starting tracking...');
+            errorMessage.style.display = 'none';
+            
+            try {
+                // Request microphone access
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    } 
+                });
+                
+                console.log('Microphone access granted');
+                
+                // Create audio context
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+
+                analyser.smoothingTimeConstant = 0.3;
+                analyser.fftSize = 1024;
+
+                microphone.connect(analyser);
+                analyser.connect(javascriptNode);
+                javascriptNode.connect(audioContext.destination);
+
+                javascriptNode.onaudioprocess = function() {
+                    processAudio();
+                };
+
+                // Reset counters
+                punchCount = 0;
+                punchCountEl.textContent = '0';
+                startTime = Date.now();
+                lastPunchTime = 0;
+                isTracking = true;
+
+                // Update UI
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                // Start timer
+                timerInterval = setInterval(updateTimer, 100);
+                
+                console.log('Tracking started successfully');
+
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'Microphone access denied. Please allow permission in your browser settings.';
+            }
+        }
+
+        function processAudio() {
+            if (!isTracking || !analyser) return;
+
+            const array = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(array);
+
+            // Calculate average volume
+            let values = 0;
+            for (let i = 0; i < array.length; i++) {
+                values += array[i];
+            }
+            const average = values / array.length;
+
+            // Update level indicator
+            const levelPercent = Math.min(100, (average / 128) * 100);
+            levelFill.style.width = levelPercent + '%';
+
+            // Detect punch based on threshold and time since last punch
+            const threshold = 100 - sensitivity; // Invert for intuitive control
+            const currentTime = Date.now();
+            const timeSinceLastPunch = currentTime - lastPunchTime;
+
+            if (average > threshold && timeSinceLastPunch > 200) { // 200ms debounce
+                punchCount++;
+                punchCountEl.textContent = punchCount;
+                
+                // Add punch animation
+                punchCountEl.classList.remove('punch-animation');
+                void punchCountEl.offsetWidth; // Trigger reflow
+                punchCountEl.classList.add('punch-animation');
+
+                lastPunchTime = currentTime;
+
+                // Update average speed
+                const elapsedMinutes = (currentTime - startTime) / 60000;
+                if (elapsedMinutes > 0) {
+                    const punchesPerMinute = Math.round(punchCount / elapsedMinutes);
+                    avgSpeedEl.textContent = punchesPerMinute;
+                }
+            }
+        }
+
+        function stopTracking() {
+            if (!isTracking) return;
+
+            console.log('Stopping tracking...');
+            isTracking = false;
+
+            // Stop audio processing
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            if (microphone) {
+                microphone.disconnect();
+                microphone = null;
+            }
+            if (javascriptNode) {
+                javascriptNode.disconnect();
+                javascriptNode = null;
+            }
+            if (analyser) {
+                analyser.disconnect();
+                analyser = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+
+            // Stop timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+
+            // Save session to history
+            if (punchCount > 0) {
+                const session = {
+                    date: new Date().toLocaleString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    }),
+                    punches: punchCount,
+                    duration: Math.floor((Date.now() - startTime) / 1000)
+                };
+                
+                sessionHistory.push(session);
+                
+                // Keep only last 10 sessions
+                if (sessionHistory.length > 10) {
+                    sessionHistory.shift();
+                }
+
+                updateChart();
+                updateBestScore();
+                saveToLocalStorage();
+            }
+
+            // Update UI
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            levelFill.style.width = '0%';
+            
+            console.log('Tracking stopped');
+        }
+
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateChart() {
+            if (!historyChart) return;
+            
+            const labels = sessionHistory.map(s => s.date);
+            const data = sessionHistory.map(s => s.punches);
+
+            historyChart.data.labels = labels;
+            historyChart.data.datasets[0].data = data;
+            historyChart.update();
+        }
+
+        function updateBestScore() {
+            if (sessionHistory.length > 0) {
+                const best = Math.max(...sessionHistory.map(s => s.punches));
+                bestScoreEl.textContent = best;
+            }
+        }
+
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear all history?')) {
+                sessionHistory = [];
+                updateChart();
+                bestScoreEl.textContent = '0';
+                saveToLocalStorage();
+            }
+        }
+
+        function saveToLocalStorage() {
+            try {
+                // Using localStorage for persistent storage
+                localStorage.setItem('boxingHistory', JSON.stringify(sessionHistory));
+            } catch (e) {
+                console.log('Could not save to localStorage');
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('boxingHistory');
+                if (saved) {
+                    sessionHistory = JSON.parse(saved);
+                    updateChart();
+                    updateBestScore();
+                }
+            } catch (e) {
+                console.log('Could not load from localStorage');
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', function() {
+            initChart();
+            loadFromLocalStorage();
+            
+            // Set initial sensitivity value
+            sensitivityValue.textContent = sensitivity;
+        });
+
+        // Prevent iOS bounce scrolling
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
